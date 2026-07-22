@@ -41,6 +41,19 @@ jobs:
       - name: Format
         run: ruff format --check .
       - name: Test
-        run: pytest --cov=printwatch --cov-report=term-missing
+        id: test
+        continue-on-error: true
+        run: >-
+          pytest --cov=printwatch --cov-report=term-missing
+          --junitxml=pytest-results.xml
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results-${{ github.run_id }}
+          path: pytest-results.xml
+      - name: Enforce test result
+        if: steps.test.outcome == 'failure'
+        run: exit 1
       - name: Compile
         run: python -m compileall src
