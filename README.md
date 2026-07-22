@@ -19,9 +19,10 @@ release.
 ## What works today
 
 - Add, edit, and remove multiple printer camera profiles.
-- View HTTP, HTTPS, and MJPEG-style browser streams.
+- View direct HTTP or HTTPS MJPEG/JPEG streams without an embedded browser.
+- Automatically reconnect with bounded exponential backoff.
 - Automatically cycle between two or more cameras at a configurable interval.
-- Capture screenshots to PNG or JPEG.
+- Capture the original camera frame to PNG or JPEG.
 - Keep the window above other applications.
 - Save camera configuration locally with atomic writes and corrupt-file recovery.
 - Run from the same Python source on Windows, macOS, and Linux.
@@ -29,10 +30,15 @@ release.
 
 ## Supported connections
 
-The initial release intentionally focuses on local camera viewing:
+The initial release intentionally focuses on direct local camera streams:
 
 - ELEGOO-style MJPEG stream: `http://<printer-ip>:3031/video`
-- Generic HTTP/MJPEG camera or printer stream
+- Generic direct MJPEG stream
+- Direct JPEG snapshot endpoint, refreshed automatically
+
+HTML camera dashboards, HLS, WebRTC, and RTSP are not supported in the initial release. This
+narrower protocol contract removes the Chromium/WebEngine runtime, reduces package size and
+attack surface, and makes Linux distribution simpler.
 
 Credentials embedded in URLs are rejected because the configuration is stored locally as
 plain JSON. Authenticated cameras need a future secure credential-store adapter.
@@ -53,7 +59,7 @@ printwatch
 ### CachyOS / Arch Linux
 
 ```bash
-sudo pacman -S --needed python python-pip qt6-webengine
+sudo pacman -S --needed python python-pip
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
