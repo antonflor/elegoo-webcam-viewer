@@ -1,4 +1,4 @@
-from printwatch.stream import MjpegFrameParser
+from printwatch.mjpeg import MjpegFrameParser
 
 
 def jpeg(payload: bytes) -> bytes:
