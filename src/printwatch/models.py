@@ -45,9 +45,11 @@ class CameraProfile:
                 "Credentials embedded in URLs are not stored. Use a camera without URL credentials."
             )
         try:
-            parsed.port
+            _ = parsed.port
         except ValueError as error:
-            raise ValidationError("Stream URL port must be a number from 1 through 65535.") from error
+            raise ValidationError(
+                "Stream URL port must be a number from 1 through 65535."
+            ) from error
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
