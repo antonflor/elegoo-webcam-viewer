@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from contextlib import suppress
 
 from PyQt6.QtCore import QSize, Qt, QTimer, QUrl, pyqtSignal
 from PyQt6.QtGui import QPixmap, QResizeEvent
@@ -106,7 +107,10 @@ class MjpegViewer(QWidget):
         self.status_changed.emit("Connecting to camera…")
 
         request = QNetworkRequest(QUrl(self._url))
-        request.setRawHeader(b"Accept", b"multipart/x-mixed-replace,image/jpeg,*/*;q=0.5")
+        request.setRawHeader(
+            b"Accept",
+            b"multipart/x-mixed-replace,image/jpeg,*/*;q=0.5",
+        )
         request.setRawHeader(b"User-Agent", b"PrintWatch-Desktop/0.2")
         request.setAttribute(
             QNetworkRequest.Attribute.CacheLoadControlAttribute,
@@ -151,10 +155,8 @@ class MjpegViewer(QWidget):
             (reply.errorOccurred, self._network_error),
             (reply.finished, self._reply_finished),
         ):
-            try:
+            with suppress(TypeError, RuntimeError):
                 signal.disconnect(slot)
-            except (TypeError, RuntimeError):
-                pass
 
     def _current_sender_reply(self) -> QNetworkReply | None:
         sender = self.sender()
