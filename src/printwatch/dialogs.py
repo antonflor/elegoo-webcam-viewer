@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtWidgets import (
+    QAbstractItemView,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -96,12 +97,14 @@ class CameraManagerDialog(QDialog):
         intro.setWordWrap(True)
 
         self.list_widget = QListWidget()
-        self.list_widget.setDragDropMode(QListWidget.DragDropMode.InternalMove)
+        self.list_widget.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
         self.list_widget.currentRowChanged.connect(self._update_button_state)
         for profile in self._profiles:
             item = QListWidgetItem(profile.name)
             item.setData(Qt.ItemDataRole.UserRole, profile.id)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsDragEnabled)
+            item.setFlags(
+                item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsDragEnabled
+            )
             item.setCheckState(
                 Qt.CheckState.Checked if profile.enabled else Qt.CheckState.Unchecked
             )
