@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "printwatch-desktop"
+version = "0.1.0"
+description = "A local-first, cross-platform desktop viewer for multiple 3D-printer camera streams."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Anton Flor" }]
+keywords = ["3d-printing", "webcam", "mjpeg", "elegoo", "printer-monitoring", "pyqt6"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: X11 Applications :: Qt",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Video :: Display",
+]
+dependencies = [
+  "platformdirs>=4.2,<5",
+  "PyQt6>=6.7,<7",
+  "PyQt6-WebEngine>=6.7,<7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2",
+  "hatch>=1.12",
+  "pyinstaller>=6.11",
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.9",
+]
+
+[project.gui-scripts]
+printwatch = "printwatch.app:main"
+
+[project.urls]
+Homepage = "https://github.com/antonflor/elegoo-webcam-viewer"
+Issues = "https://github.com/antonflor/elegoo-webcam-viewer/issues"
+Source = "https://github.com/antonflor/elegoo-webcam-viewer"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/printwatch"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
