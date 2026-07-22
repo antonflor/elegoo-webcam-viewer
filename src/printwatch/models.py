@@ -69,6 +69,7 @@ class AppPreferences:
     cycle_enabled: bool = False
     cycle_interval_seconds: int = 15
     selected_camera_id: str | None = None
+    onboarding_completed: bool = False
 
     def normalize(self) -> None:
         self.cycle_interval_seconds = max(5, min(3600, int(self.cycle_interval_seconds)))
@@ -83,6 +84,7 @@ class AppPreferences:
             cycle_enabled=bool(data.get("cycle_enabled", False)),
             cycle_interval_seconds=int(data.get("cycle_interval_seconds", 15)),
             selected_camera_id=data.get("selected_camera_id"),
+            onboarding_completed=bool(data.get("onboarding_completed", False)),
         )
         preferences.normalize()
         return preferences
