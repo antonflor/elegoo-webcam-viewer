@@ -25,6 +25,15 @@ def test_redacted_state_omits_sensitive_camera_fields() -> None:
     assert '"path": "/video"' in payload
 
 
+def test_redacted_state_hides_nonstandard_endpoint_paths() -> None:
+    state = AppState(
+        cameras=[CameraProfile(name="Printer", url="http://printer.local/private/token-123")]
+    )
+    payload = json.dumps(redacted_state(state))
+    assert "token-123" not in payload
+    assert "<redacted-path>" in payload
+
+
 def test_redact_text_removes_urls_ipv4_and_ipv6() -> None:
     text = (
         "camera http://printer.local:3031/video failed at 192.168.1.20 "
@@ -51,14 +60,15 @@ def test_export_bundle_contains_only_redacted_data(tmp_path: Path) -> None:
             )
         ]
     )
-    destination = tmp_path / "diagnostics.zip"
-    export_diagnostics(
-        destination,
+    destination_without_suffix = tmp_path / "diagnostics"
+    destination = export_diagnostics(
+        destination_without_suffix,
         state=state,
         app_version="0.2.0a2",
         log_path=log_path,
     )
 
+    assert destination.suffix == ".zip"
     with ZipFile(destination) as archive:
         assert set(archive.namelist()) == {
             "README.txt",
