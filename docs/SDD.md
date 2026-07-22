@@ -2,14 +2,14 @@
 
 **Document status:** Active source of truth  
 **Target release:** `v1.0.0` public release  
-**Current implementation:** `v0.2.0a1`
+**Current implementation:** `v0.2.0a2`
 
 ## 1. Product statement
 
 PrintWatch Desktop is a local-first, cross-platform desktop companion for people who operate
 one or more 3D printers. It provides a compact, persistent way to view camera streams, switch
-or cycle between printers, and capture evidence of a print without relying on a proprietary
-mobile application.
+or cycle between printers, test connections, and capture evidence of a print without relying
+on a proprietary mobile application.
 
 The product begins with ELEGOO-compatible camera streams but remains vendor-neutral. It does
 not claim to replace ELEGOO Matrix, a slicer, printer firmware, or a safety system.
@@ -50,8 +50,8 @@ between both streams every 15 seconds and saves a screenshot when a print looks 
 
 ### Small print farm operator
 
-Names several cameras, quickly selects a printer from the sidebar, and sees an actionable
-connection error when a stream is offline.
+Names and orders several cameras, disables idle printers, validates a stream before a long
+print, and exports a privacy-safe diagnostics bundle when troubleshooting.
 
 ### Cross-platform hobbyist
 
@@ -61,13 +61,14 @@ Uses the same camera configuration concepts on Windows, an Apple Silicon Mac, an
 
 ### FR-1 Camera profiles
 
-- Create, edit, remove, enable, and disable profiles.
+- Create, edit, remove, enable, disable, and reorder profiles.
 - Required fields: stable ID, display name, stream URL, connection type.
-- Accept `http://` and `https://` URLs.
+- Accept `http://` and `https://` URLs with valid numeric ports.
 - Reject embedded credentials until secure credential storage exists.
 - Persist data locally and recover safely from a corrupt configuration.
 
-**Acceptance:** Adding two valid URLs survives restart; deleting one never changes the printer.
+**Acceptance:** Two profiles survive restart in their configured order, and disabling or
+deleting one never changes the printer itself.
 
 ### FR-2 Viewer
 
@@ -83,13 +84,14 @@ crashing or growing memory without limit.
 
 ### FR-3 Multi-camera navigation
 
-- Show all enabled cameras in a sidebar.
+- Show all enabled cameras in the configured order.
 - Preserve the selected camera across restart.
 - Provide next-camera cycling for two or more cameras.
 - Configure cycle intervals from 5 seconds through 60 minutes.
 - Pause cycling automatically when fewer than two cameras are enabled.
 
-**Acceptance:** With two cameras and a 5-second interval, selection alternates continuously.
+**Acceptance:** With two cameras and a 5-second interval, selection alternates continuously in
+the configured order.
 
 ### FR-4 Screenshots
 
@@ -103,14 +105,22 @@ crashing or growing memory without limit.
 - Resizable window with persisted geometry.
 - Optional always-on-top behavior.
 - Keyboard shortcuts for common actions.
+- First-run onboarding that explains local-only operation and adds the first camera.
 - About screen with privacy, trademark, and safety positioning.
 - No mandatory account, analytics, or internet service.
 
-### FR-6 Diagnostics (v0.2)
+### FR-6 Operations and diagnostics
 
-- Export a redacted diagnostics bundle with app version, OS, configuration schema, and recent
-  local logs.
-- Never include camera credentials or image data without explicit confirmation.
+- Test a camera independently from the active viewer by waiting for one valid JPEG frame.
+- Fail the connection test with a useful result after a bounded timeout.
+- Write rotating local application logs with no telemetry or stream URL logging.
+- Redact URLs, IP addresses, and home-directory paths from formatted logs.
+- Export a ZIP with app/OS metadata, redacted configuration, and a sanitized log tail.
+- Omit camera names, hosts, addresses, notes, queries, credentials, screenshots, and
+  nonstandard endpoint paths from diagnostics.
+
+**Acceptance:** A fixture containing names, private IPs, URL tokens, notes, and custom paths
+produces a diagnostics bundle containing none of those values.
 
 ### FR-7 Grid view (v0.3)
 
@@ -126,15 +136,17 @@ crashing or growing memory without limit.
 - Validate URLs before use.
 - No embedded secrets in configuration.
 - Atomic state writes and corrupt-state backup.
+- Bound logs to 1 MiB plus three rotated backups.
 - Document that HTTP streams are unencrypted and should remain on trusted networks or VPNs.
 - Publish SHA-256 checksums for release assets.
 
 ### Reliability
 
-- Unit coverage for state validation, migration, persistence, and frame parsing.
+- Unit coverage for state validation, persistence, frame parsing, redaction, and diagnostics.
 - Network reply replacement cannot terminate or corrupt a newer active stream.
 - Ended and failed streams reconnect without application exit.
-- State format includes a schema version and migration strategy.
+- Camera probes cannot interrupt the active viewer.
+- State format includes a schema version and backward-compatible preference defaults.
 
 ### Performance
 
@@ -142,6 +154,7 @@ crashing or growing memory without limit.
 - Startup target: under 5 seconds on supported hardware after first launch.
 - UI interactions remain responsive when a camera is offline.
 - Stream parser buffer is capped at 16 MiB per active stream.
+- Camera probe parser buffer is capped at 4 MiB.
 
 ### Accessibility
 
@@ -160,15 +173,20 @@ crashing or growing memory without limit.
 
 ```text
 PyQt6 desktop shell
-├── Main window and camera navigation
+├── Main window and ordered camera navigation
 ├── One active MjpegViewer
 │   ├── Qt Network request/reply lifecycle
 │   ├── Bounded MJPEG/JPEG frame parser
 │   ├── Frame scaling and original-frame screenshots
 │   └── Reconnect timer with bounded backoff
-├── Dialogs and desktop actions
+├── Independent CameraProbe
+│   ├── 10-second default timeout
+│   └── First-valid-frame success contract
+├── Camera dialogs and manager
 ├── Domain model (no Qt dependency)
 ├── Atomic JSON state repository
+├── Rotating privacy formatter and local logs
+├── Redacted diagnostics ZIP exporter
 └── Future provider adapters
     ├── Generic MJPEG/JPEG
     ├── Documented ELEGOO LAN APIs
@@ -177,13 +195,14 @@ PyQt6 desktop shell
 ```
 
 The single active native stream is deliberate: it supports cycling while minimizing network,
-memory, and decoder use. Grid view will introduce a bounded stream-widget pool. The project
-will not restore a general embedded browser to add protocols; new formats require explicit,
-testable adapters. See `docs/ADR-0001-native-mjpeg.md`.
+memory, and decoder use. A probe opens only for the duration of a user-requested connection
+test. Grid view will introduce a bounded stream-widget pool. The project will not restore a
+general embedded browser to add protocols; new formats require explicit, testable adapters.
+See `docs/ADR-0001-native-mjpeg.md`.
 
 ## 9. Configuration contract
 
-Default platform-specific location is selected by `platformdirs`.
+Default platform-specific locations are selected by `platformdirs` for state and logs.
 
 ```json
 {
@@ -201,10 +220,14 @@ Default platform-specific location is selected by `platformdirs`.
   "preferences": {
     "cycle_enabled": true,
     "cycle_interval_seconds": 15,
-    "selected_camera_id": "uuid"
+    "selected_camera_id": "uuid",
+    "onboarding_completed": true
   }
 }
 ```
+
+The new onboarding preference defaults to `false` when absent, so existing schema-v1 files
+remain readable without migration.
 
 ## 10. Packaging decision
 
@@ -215,8 +238,8 @@ Default platform-specific location is selected by `platformdirs`.
 
 A raw PyInstaller `.exe` is acceptable for alpha testing, but it is not the finished Windows
 product. Public releases prefer an installer or a one-directory portable bundle for faster
-startup and clearer provenance. Removing Qt WebEngine and Chromium is expected to materially
-reduce all native artifact sizes; the build matrix records the actual result before merge.
+startup and clearer provenance. Removing Qt WebEngine and Chromium reduced validated platform
+artifacts by 67–83 percent.
 
 ## 11. Release milestones
 
@@ -229,26 +252,24 @@ reduce all native artifact sizes; the build matrix records the actual result bef
 ### M1 — Product foundation (`v0.1.0-alpha`, complete)
 
 - Package layout and versioning.
-- Multi-camera CRUD.
-- Automatic cycling.
+- Multi-camera CRUD and automatic cycling.
 - Atomic local state.
 - Unit tests and linting.
 - Cross-platform build workflow.
 - SDD, security, contribution, and release documentation.
 
-### M2 — Hardware beta (`v0.2.0`)
+### M2 — Hardware beta (`v0.2.0`, software scope complete)
 
 - Replace WebEngine with a native MJPEG/JPEG runtime.
-- Test one FDM and one resin ELEGOO printer.
-- Add connection-test button and diagnostics export.
-- Add structured local logs and redaction tests.
-- Improve first-run onboarding and errors.
+- Add connection testing, structured local logs, and redacted diagnostics export.
+- Add enable/disable, ordering, onboarding, and clearer errors.
 - Produce unsigned Windows/macOS/Linux beta assets.
+- Test one FDM and one resin ELEGOO printer on real hardware.
 
 ### M3 — Experience beta (`v0.3.0`)
 
 - Grid view.
-- Camera reordering, enable/disable, and import/export.
+- Camera import/export.
 - Tray/minimize behavior.
 - Accessibility pass.
 - Native icons and product screenshots.
