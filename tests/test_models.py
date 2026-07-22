@@ -20,6 +20,8 @@ def test_camera_profile_round_trip() -> None:
         "ftp://192.168.1.20/video",
         "http://",
         "http://user:password@192.168.1.20/video",
+        "http://printer.local:not-a-port/video",
+        "http://printer.local:70000/video",
     ],
 )
 def test_camera_profile_rejects_unsafe_urls(url: str) -> None:
@@ -34,6 +36,17 @@ def test_cycle_interval_is_bounded() -> None:
     high.normalize()
     assert low.cycle_interval_seconds == 5
     assert high.cycle_interval_seconds == 3600
+
+
+def test_preferences_round_trip_onboarding_state() -> None:
+    preferences = AppPreferences(
+        cycle_enabled=True,
+        cycle_interval_seconds=30,
+        selected_camera_id="camera-id",
+        onboarding_completed=True,
+    )
+    restored = AppPreferences.from_dict(preferences.to_dict())
+    assert restored == preferences
 
 
 def test_app_state_rejects_duplicate_ids() -> None:
