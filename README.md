@@ -95,6 +95,7 @@ packages.
 
 - [`docs/SDD.md`](docs/SDD.md) — product specification and implementation plan
 - [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md) — public-release gates and milestones
+- [`docs/ADR-0001-native-mjpeg.md`](docs/ADR-0001-native-mjpeg.md) — native stream-runtime decision and measured impact
 - [`docs/MATRIX_INTEGRATION.md`](docs/MATRIX_INTEGRATION.md) — safe integration strategy
 - [`SECURITY.md`](SECURITY.md) — vulnerability reporting and local-data model
 
