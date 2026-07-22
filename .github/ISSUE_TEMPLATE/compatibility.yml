@@ -1,0 +1,31 @@
+name: Printer compatibility report
+description: Report a working or failing local camera stream
+title: "[Compatibility]: "
+labels: [compatibility]
+body:
+  - type: input
+    id: printer
+    attributes:
+      label: Printer manufacturer and model
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options: [Works, Partially works, Does not work]
+    validations:
+      required: true
+  - type: input
+    id: pattern
+    attributes:
+      label: Redacted stream pattern
+      description: Example http://PRINTER-IP:3031/video. Do not submit your real address.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
