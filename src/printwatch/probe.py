@@ -23,12 +23,14 @@ class CameraProbe(QObject):
         self._timeout.setSingleShot(True)
         self._timeout.timeout.connect(self._timed_out)
         self._finished = False
+        self._timeout_ms = 10_000
 
     def start(self, url: str, timeout_ms: int = 10_000) -> None:
         self.cancel()
         self._finished = False
         self._parser.reset()
         self._elapsed.start()
+        self._timeout_ms = max(1_000, timeout_ms)
 
         request = QNetworkRequest(QUrl(url))
         request.setRawHeader(
@@ -40,14 +42,14 @@ class CameraProbe(QObject):
             QNetworkRequest.Attribute.CacheLoadControlAttribute,
             QNetworkRequest.CacheLoadControl.AlwaysNetwork,
         )
-        request.setTransferTimeout(timeout_ms)
+        request.setTransferTimeout(self._timeout_ms)
 
         reply = self._manager.get(request)
         self._reply = reply
         reply.readyRead.connect(self._read_available_data)
         reply.errorOccurred.connect(self._network_error)
         reply.finished.connect(self._reply_finished)
-        self._timeout.start(timeout_ms)
+        self._timeout.start(self._timeout_ms)
 
     def cancel(self) -> None:
         self._timeout.stop()
@@ -92,7 +94,11 @@ class CameraProbe(QObject):
         self._complete(False, "The endpoint closed without returning a valid JPEG frame.")
 
     def _timed_out(self) -> None:
-        self._complete(False, "The camera did not return a valid frame within 10 seconds.")
+        timeout_seconds = self._timeout_ms / 1000
+        self._complete(
+            False,
+            f"The camera did not return a valid frame within {timeout_seconds:g} seconds.",
+        )
 
     def _complete(self, success: bool, message: str) -> None:
         if self._finished:
