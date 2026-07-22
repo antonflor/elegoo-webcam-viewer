@@ -1,6 +1,6 @@
 # ADR-0001: Use a Native MJPEG Runtime
 
-- **Status:** Accepted
+- **Status:** Accepted and validated
 - **Date:** 2026-07-22
 - **Decision owners:** PrintWatch maintainers
 
@@ -19,7 +19,7 @@ render that stream.
 
 ## Decision
 
-PrintWatch will use Qt Network to read direct HTTP/HTTPS MJPEG or JPEG endpoints and a small,
+PrintWatch uses Qt Network to read direct HTTP/HTTPS MJPEG or JPEG endpoints and a small,
 bounded parser to extract JPEG frames. The application keeps only one active network stream
 and one decoded source frame at a time.
 
@@ -52,6 +52,15 @@ embedded browser.
 
 ## Validation
 
-The pure frame parser is covered for chunk boundaries, multiple frames, transport headers,
-oversized incomplete frames, and split JPEG markers. Native Windows, Apple Silicon macOS, and
-Linux package builds remain required before merge.
+GitHub Actions run `29894865275` passed lint, formatting, thirteen tests, source compilation,
+and native packaging on Windows x64, Apple Silicon macOS, and Linux x64.
+
+| Platform artifact | WebEngine build | Native build | Reduction |
+|---|---:|---:|---:|
+| Windows x64 | 346.0 MB | 70.1 MB | 79.7% |
+| Linux x64 | 224.4 MB | 73.1 MB | 67.4% |
+| macOS arm64 | 167.4 MB | 28.1 MB | 83.2% |
+
+The pure frame parser is covered for chunk boundaries, multiple frames, multipart transport
+headers, oversized incomplete frames, and split JPEG markers. Hardware-level stream and soak
+testing remains part of the beta release gate.
