@@ -4,8 +4,23 @@
 
 The original prototype was approximately **20–25% of a public desktop product**: the core idea
 worked, but it supported only one URL, used a fixed window, had no tests or CI, and distributed
-an unsigned 190 MB one-file executable. The repository foundation in `v0.1.0-alpha` moves the
-project to roughly **55–60% of an honest beta**. It is not yet a stable public release.
+an unsigned 190 MB one-file executable. The `v0.1.0-alpha` foundation, green CI, and successful
+native artifact builds move the project to roughly **60–65% of an honest beta**. It is not yet
+a stable public release.
+
+## Build validation record
+
+On July 22, 2026, GitHub Actions release run `29893266522` completed successfully for all
+non-publishing jobs:
+
+- Windows x64 portable ZIP and Inno Setup installer
+- Apple Silicon macOS application archive
+- Linux x64 application bundle
+- Shared lint, formatting, unit-test, and source-compilation gate
+
+The publication job was skipped as intended because the build did not use a version tag.
+Artifact creation proves the packaging pipeline, but not clean installation, runtime camera
+compatibility, signing, or long-duration stability.
 
 ## Required release gates
 
@@ -25,6 +40,7 @@ project to roughly **55–60% of an honest beta**. It is not yet a stable public
 
 - [x] Domain and persistence unit tests
 - [x] Ruff and pytest CI
+- [x] Native packaging jobs execute successfully on all three CI targets
 - [ ] GUI smoke tests on all three operating systems
 - [ ] Eight-hour two-printer soak test
 - [ ] Offline/reconnect test
@@ -33,18 +49,19 @@ project to roughly **55–60% of an honest beta**. It is not yet a stable public
 
 ### Windows
 
-- [x] Automated PyInstaller build design
-- [x] Inno Setup installer definition
+- [x] Automated PyInstaller build
+- [x] Inno Setup installer build
+- [x] Portable ZIP artifact build
 - [ ] Clean Windows 11 installation test
-- [ ] Microsoft code-signing certificate and signed installer
+- [ ] Signed installer
 - [ ] SmartScreen reputation plan
-- [ ] Portable ZIP validation
 
 ### macOS Apple Silicon
 
-- [x] Native PyInstaller build design
-- [ ] Apple Developer ID certificate
-- [ ] Hardened runtime and entitlements validation
+- [x] Native PyInstaller app build
+- [x] Apple Silicon application archive build
+- [ ] Signed application
+- [ ] Hardened runtime validation
 - [ ] Notarization and stapling
 - [ ] Clean Apple Silicon installation test
 - [ ] Camera test on macOS 14+
@@ -52,7 +69,7 @@ project to roughly **55–60% of an honest beta**. It is not yet a stable public
 ### Linux / CachyOS
 
 - [x] Source-install instructions
-- [x] Linux native bundle workflow
+- [x] Linux native bundle build
 - [ ] Test current CachyOS in a clean VM or physical host
 - [ ] Validate Qt WebEngine sandbox behavior
 - [ ] Choose and test AppImage/AUR/Flatpak packaging
@@ -67,7 +84,7 @@ project to roughly **55–60% of an honest beta**. It is not yet a stable public
 - [ ] Dependency license inventory
 - [ ] Threat-model review
 - [ ] Vulnerability reporting address confirmed
-- [ ] Release checksums and provenance attestation
+- [ ] Tagged-release checksums and provenance attestation
 
 ### Portfolio and launch
 
@@ -81,11 +98,11 @@ project to roughly **55–60% of an honest beta**. It is not yet a stable public
 
 | Platform | Required device | Status |
 |---|---|---|
-| Windows 11 x64 | User's main Windows workstation | Pending |
-| macOS 14+ arm64 | Apple Silicon Mac | Pending |
-| CachyOS current | x64 PC/VM | Pending |
-| Printer A | User's FDM printer/camera | Pending model and soak test |
-| Printer B | User's resin printer/camera | Pending model and soak test |
+| Windows 11 x64 | Windows workstation | CI build passed; clean install pending |
+| macOS 14+ arm64 | Apple Silicon Mac | CI build passed; clean install pending |
+| CachyOS current | x64 PC or VM | Linux CI build passed; CachyOS test pending |
+| Printer A | FDM printer and camera | Pending model and soak test |
+| Printer B | Resin printer and camera | Pending model and soak test |
 
 ## Version strategy
 
@@ -97,8 +114,9 @@ project to roughly **55–60% of an honest beta**. It is not yet a stable public
 
 ## Immediate next work
 
-1. Run CI and correct platform-specific failures.
-2. Add connection probing and structured logs.
-3. Confirm the exact FDM and resin printer models and stream URLs during hardware testing.
-4. Produce unsigned beta artifacts from a tagged release.
-5. Test on Windows, Apple Silicon, and CachyOS before claiming compatibility.
+1. Add connection probing, reconnection behavior, and structured local logs.
+2. Confirm the exact FDM and resin printer models and stream URLs during hardware testing.
+3. Install the unsigned beta on Windows, Apple Silicon, and CachyOS and record results.
+4. Run an eight-hour two-camera soak test with disconnect and reconnect scenarios.
+5. Add the product icon, screenshots, onboarding, and accessibility polish.
+6. Complete signing requirements before broad distribution.
