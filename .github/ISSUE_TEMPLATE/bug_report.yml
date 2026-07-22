@@ -1,0 +1,37 @@
+name: Bug report
+description: Report a reproducible PrintWatch problem
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include public IP addresses, credentials, or private camera screenshots.
+  - type: input
+    id: version
+    attributes:
+      label: PrintWatch version
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows 11, macOS Apple Silicon, CachyOS/Arch Linux, Other Linux]
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
