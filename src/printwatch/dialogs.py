@@ -1,16 +1,23 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from uuid import uuid4
 
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import Qt, QUrl
 from PyQt6.QtWidgets import (
+    QAbstractItemView,
     QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QHBoxLayout,
+    QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPlainTextEdit,
+    QPushButton,
     QSpinBox,
     QVBoxLayout,
 )
@@ -71,9 +78,87 @@ class CameraDialog(QDialog):
             name=self.name_edit.text(),
             url=self.url_edit.text(),
             kind=self.kind_combo.currentData(),
-            enabled=True,
+            enabled=self._profile.enabled if self._profile else True,
             notes=self.notes_edit.toPlainText(),
         )
+
+
+class CameraManagerDialog(QDialog):
+    def __init__(self, cameras: list[CameraProfile], parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Manage cameras")
+        self.setMinimumSize(520, 380)
+        self._profiles = deepcopy(cameras)
+
+        intro = QLabel(
+            "Check the cameras that should appear in the sidebar. Drag or use the buttons "
+            "to control the order used by camera cycling."
+        )
+        intro.setWordWrap(True)
+
+        self.list_widget = QListWidget()
+        self.list_widget.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.list_widget.currentRowChanged.connect(self._update_button_state)
+        for profile in self._profiles:
+            item = QListWidgetItem(profile.name)
+            item.setData(Qt.ItemDataRole.UserRole, profile.id)
+            item.setFlags(
+                item.flags() | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsDragEnabled
+            )
+            item.setCheckState(
+                Qt.CheckState.Checked if profile.enabled else Qt.CheckState.Unchecked
+            )
+            self.list_widget.addItem(item)
+
+        self.up_button = QPushButton("Move up")
+        self.up_button.clicked.connect(lambda: self._move_current(-1))
+        self.down_button = QPushButton("Move down")
+        self.down_button.clicked.connect(lambda: self._move_current(1))
+
+        controls = QHBoxLayout()
+        controls.addWidget(self.up_button)
+        controls.addWidget(self.down_button)
+        controls.addStretch(1)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(intro)
+        layout.addWidget(self.list_widget)
+        layout.addLayout(controls)
+        layout.addWidget(buttons)
+
+        if self.list_widget.count():
+            self.list_widget.setCurrentRow(0)
+        self._update_button_state()
+
+    def _move_current(self, offset: int) -> None:
+        current = self.list_widget.currentRow()
+        destination = current + offset
+        if current < 0 or destination < 0 or destination >= self.list_widget.count():
+            return
+        item = self.list_widget.takeItem(current)
+        self.list_widget.insertItem(destination, item)
+        self.list_widget.setCurrentRow(destination)
+
+    def _update_button_state(self) -> None:
+        row = self.list_widget.currentRow()
+        self.up_button.setEnabled(row > 0)
+        self.down_button.setEnabled(0 <= row < self.list_widget.count() - 1)
+
+    def profiles(self) -> list[CameraProfile]:
+        by_id = {profile.id: profile for profile in self._profiles}
+        ordered: list[CameraProfile] = []
+        for index in range(self.list_widget.count()):
+            item = self.list_widget.item(index)
+            profile = by_id[item.data(Qt.ItemDataRole.UserRole)]
+            profile.enabled = item.checkState() == Qt.CheckState.Checked
+            ordered.append(profile)
+        return ordered
 
 
 class CycleIntervalDialog(QDialog):

@@ -1,6 +1,6 @@
 #define MyAppName "PrintWatch Desktop"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.2.0-alpha.1"
+  #define MyAppVersion "0.2.0-alpha.2"
 #endif
 #define MyAppPublisher "Monty Labs"
 #define MyAppURL "https://github.com/antonflor/elegoo-webcam-viewer"
