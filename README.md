@@ -11,20 +11,23 @@ product for Windows, macOS, and Linux.
 
 ## Product status
 
-**Alpha / pre-release.** The core multi-camera experience is implemented, but code signing,
-installer validation, hardware compatibility testing, accessibility review, and the remaining
-gates in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md) must pass before a stable public
-release.
+**Alpha / hardware-beta candidate.** The core multi-camera and troubleshooting experience is
+implemented, but signing, clean-machine installation, live-printer soak testing, accessibility,
+and the remaining gates in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md) must pass before a
+stable public release.
 
 ## What works today
 
-- Add, edit, and remove multiple printer camera profiles.
+- Add, edit, remove, enable, disable, and reorder multiple camera profiles.
 - View direct HTTP or HTTPS MJPEG/JPEG streams without an embedded browser.
+- Test a camera independently by waiting for one valid frame with a bounded timeout.
 - Automatically reconnect with bounded exponential backoff.
-- Automatically cycle between two or more cameras at a configurable interval.
+- Automatically cycle between enabled cameras in the configured order.
 - Capture the original camera frame to PNG or JPEG.
 - Keep the window above other applications.
 - Save camera configuration locally with atomic writes and corrupt-file recovery.
+- Write bounded local logs with URL, IP, and home-directory redaction.
+- Export a diagnostics ZIP that omits camera names, hosts, notes, tokens, and screenshots.
 - Run from the same Python source on Windows, macOS, and Linux.
 - Build native artifacts through GitHub Actions.
 
@@ -42,6 +45,16 @@ attack surface, and makes Linux distribution simpler.
 
 Credentials embedded in URLs are rejected because the configuration is stored locally as
 plain JSON. Authenticated cameras need a future secure credential-store adapter.
+
+## Privacy model
+
+PrintWatch has no account, analytics, telemetry, or cloud relay. Camera traffic goes directly
+from the desktop app to the configured local endpoint. The diagnostics exporter includes only
+platform metadata, redacted configuration facts, and a sanitized tail of the rotating local
+log. Review every diagnostics ZIP before sharing it.
+
+HTTP streams are unencrypted. Keep them on a trusted LAN or a VPN you control; do not expose a
+printer camera port directly to the public internet.
 
 ## Install from source
 
