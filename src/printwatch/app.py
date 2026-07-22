@@ -5,10 +5,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from PyQt6.QtCore import QSettings, Qt, QTimer, QUrl
+from PyQt6.QtCore import QSettings, Qt, QTimer
 from PyQt6.QtGui import QAction, QCloseEvent, QKeySequence
-from PyQt6.QtWebEngineCore import QWebEnginePage
-from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -28,6 +26,7 @@ from printwatch import __version__
 from printwatch.dialogs import CameraDialog, CycleIntervalDialog
 from printwatch.models import CameraProfile
 from printwatch.storage import StateRepository
+from printwatch.stream import MjpegViewer
 
 
 class PrintWatchWindow(QMainWindow):
@@ -36,7 +35,6 @@ class PrintWatchWindow(QMainWindow):
         self.repository = repository or StateRepository()
         self.state = self.repository.load()
         self.window_settings = QSettings("Monty Labs", "PrintWatch Desktop")
-        self._always_on_top = False
 
         self.setWindowTitle(f"PrintWatch Desktop {__version__}")
         self.setMinimumSize(820, 520)
@@ -51,23 +49,18 @@ class PrintWatchWindow(QMainWindow):
 
         self.empty_label = QLabel(
             "<h2>No cameras configured</h2>"
-            "<p>Add an ELEGOO or any HTTP/MJPEG camera stream to begin.</p>"
+            "<p>Add an ELEGOO or direct HTTP/MJPEG camera stream to begin.</p>"
         )
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setTextFormat(Qt.TextFormat.RichText)
 
-        self.browser = QWebEngineView()
-        self.browser.page().setBackgroundColor(Qt.GlobalColor.black)
-        self.browser.loadStarted.connect(lambda: self.statusBar().showMessage("Connecting…"))
-        self.browser.loadProgress.connect(
-            lambda progress: self.statusBar().showMessage(f"Loading stream… {progress}%")
-        )
-        self.browser.loadFinished.connect(self._load_finished)
-        self.browser.page().renderProcessTerminated.connect(self._render_process_terminated)
+        self.viewer = MjpegViewer()
+        self.viewer.status_changed.connect(self.statusBar().showMessage)
+        self.viewer.frame_received.connect(lambda _size: self.screenshot_action.setEnabled(True))
 
         self.viewer_stack = QStackedWidget()
         self.viewer_stack.addWidget(self.empty_label)
-        self.viewer_stack.addWidget(self.browser)
+        self.viewer_stack.addWidget(self.viewer)
 
         sidebar = QWidget()
         sidebar_layout = QVBoxLayout(sidebar)
@@ -114,14 +107,15 @@ class PrintWatchWindow(QMainWindow):
 
         toolbar.addSeparator()
 
-        self.reload_action = QAction("Reload", self)
+        self.reload_action = QAction("Reconnect", self)
         self.reload_action.setShortcut(QKeySequence.StandardKey.Refresh)
-        self.reload_action.triggered.connect(self.browser.reload)
+        self.reload_action.triggered.connect(self.viewer.reload)
         toolbar.addAction(self.reload_action)
 
         self.screenshot_action = QAction("Screenshot", self)
         self.screenshot_action.setShortcut(QKeySequence("Ctrl+Shift+S"))
         self.screenshot_action.triggered.connect(self.take_screenshot)
+        self.screenshot_action.setEnabled(False)
         toolbar.addAction(self.screenshot_action)
 
         self.pin_action = QAction("Pin to top", self)
@@ -143,6 +137,11 @@ class PrintWatchWindow(QMainWindow):
         self.cycle_interval_action.triggered.connect(self.change_cycle_interval)
         toolbar.addAction(self.cycle_interval_action)
 
+        toolbar.addSeparator()
+        about_action = QAction("About", self)
+        about_action.triggered.connect(self.show_about)
+        toolbar.addAction(about_action)
+
     def _refresh_camera_list(self) -> None:
         selected_id = self.current_camera_id()
         self.camera_list.clear()
@@ -157,7 +156,7 @@ class PrintWatchWindow(QMainWindow):
                 self.camera_list.setCurrentItem(item)
 
         has_cameras = self.camera_list.count() > 0
-        self.viewer_stack.setCurrentWidget(self.browser if has_cameras else self.empty_label)
+        self.viewer_stack.setCurrentWidget(self.viewer if has_cameras else self.empty_label)
         self._set_camera_actions_enabled(has_cameras)
 
     def _restore_selection(self) -> None:
@@ -174,7 +173,7 @@ class PrintWatchWindow(QMainWindow):
         self.edit_action.setEnabled(enabled)
         self.remove_action.setEnabled(enabled)
         self.reload_action.setEnabled(enabled)
-        self.screenshot_action.setEnabled(enabled)
+        self.screenshot_action.setEnabled(enabled and self.viewer.has_frame)
         self.cycle_action.setEnabled(self.camera_list.count() > 1)
 
     def current_camera_id(self) -> str | None:
@@ -194,8 +193,9 @@ class PrintWatchWindow(QMainWindow):
             return
         self.state.preferences.selected_camera_id = camera.id
         self.repository.save(self.state)
-        self.viewer_stack.setCurrentWidget(self.browser)
-        self.browser.setUrl(QUrl(camera.url))
+        self.viewer_stack.setCurrentWidget(self.viewer)
+        self.screenshot_action.setEnabled(False)
+        self.viewer.start(camera.url)
         self.setWindowTitle(f"{camera.name} — PrintWatch Desktop")
 
     def add_camera(self) -> None:
@@ -225,7 +225,7 @@ class PrintWatchWindow(QMainWindow):
         self.repository.save(self.state)
         self._refresh_camera_list()
         self._restore_selection()
-        self.browser.setUrl(QUrl(updated.url))
+        self.viewer.start(updated.url)
 
     def remove_camera(self) -> None:
         camera = self.current_camera()
@@ -241,6 +241,7 @@ class PrintWatchWindow(QMainWindow):
         self.state.cameras = [item for item in self.state.cameras if item.id != camera.id]
         self.state.preferences.selected_camera_id = None
         self.repository.save(self.state)
+        self.viewer.stop(clear_frame=True)
         self._refresh_camera_list()
         self._restore_selection()
         self._sync_cycle_timer()
@@ -274,7 +275,6 @@ class PrintWatchWindow(QMainWindow):
             self.cycle_timer.stop()
 
     def toggle_always_on_top(self, enabled: bool) -> None:
-        self._always_on_top = enabled
         flags = self.windowFlags()
         if enabled:
             flags |= Qt.WindowType.WindowStaysOnTopHint
@@ -298,25 +298,27 @@ class PrintWatchWindow(QMainWindow):
         )
         if not path:
             return
-        if not self.browser.grab().save(path):
-            QMessageBox.warning(self, "Screenshot failed", "PrintWatch could not save the image.")
+        if not self.viewer.save_current_frame(path):
+            QMessageBox.warning(
+                self,
+                "Screenshot unavailable",
+                "PrintWatch has not received a camera frame yet.",
+            )
 
-    def _load_finished(self, success: bool) -> None:
-        camera = self.current_camera()
-        if success:
-            self.statusBar().showMessage(f"Viewing {camera.name}" if camera else "Connected")
-        else:
-            self.statusBar().showMessage("Could not load stream — verify the URL and local network")
-
-    def _render_process_terminated(
-        self, status: QWebEnginePage.RenderProcessTerminationStatus, exit_code: int
-    ) -> None:
-        self.statusBar().showMessage(
-            f"Video renderer stopped ({status.name}, code {exit_code}); reloading…"
+    def show_about(self) -> None:
+        QMessageBox.about(
+            self,
+            "About PrintWatch Desktop",
+            f"<h2>PrintWatch Desktop {__version__}</h2>"
+            "<p>A local-first, multi-camera monitor for 3D printers.</p>"
+            "<p>No account, cloud service, or telemetry is required.</p>"
+            "<p><b>Independent project:</b> not affiliated with or endorsed by ELEGOO. "
+            "ELEGOO and Matrix are trademarks of their respective owners.</p>"
+            "<p>This application is a monitoring convenience, not a printer safety system.</p>",
         )
-        QTimer.singleShot(1000, self.browser.reload)
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        self.viewer.stop()
         self.window_settings.setValue("geometry", self.saveGeometry())
         self.repository.save(self.state)
         super().closeEvent(event)
