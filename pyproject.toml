@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "printwatch-desktop"
-version = "0.1.0"
+version = "0.2.0a1"
 description = "A local-first, cross-platform desktop viewer for multiple 3D-printer camera streams."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,7 +26,6 @@ classifiers = [
 dependencies = [
   "platformdirs>=4.2,<5",
   "PyQt6>=6.7,<7",
-  "PyQt6-WebEngine>=6.7,<7",
 ]
 
 [project.optional-dependencies]

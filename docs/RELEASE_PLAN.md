@@ -4,23 +4,32 @@
 
 The original prototype was approximately **20–25% of a public desktop product**: the core idea
 worked, but it supported only one URL, used a fixed window, had no tests or CI, and distributed
-an unsigned 190 MB one-file executable. The `v0.1.0-alpha` foundation, green CI, and successful
-native artifact builds move the project to roughly **60–65% of an honest beta**. It is not yet
-a stable public release.
+an unsigned 190 MB one-file executable. The `v0.2.0a1` foundation now has multi-camera support,
+a native MJPEG/JPEG runtime, thirteen tests, green CI, and validated native artifacts. This is
+roughly **70% of an honest public beta**, but it is not yet a stable `v1.0.0` release.
 
 ## Build validation record
 
-On July 22, 2026, GitHub Actions release run `29893266522` completed successfully for all
-non-publishing jobs:
+### Cross-platform packaging foundation
 
-- Windows x64 portable ZIP and Inno Setup installer
-- Apple Silicon macOS application archive
-- Linux x64 application bundle
-- Shared lint, formatting, unit-test, and source-compilation gate
+On July 22, 2026, GitHub Actions release run `29893266522` first completed the Windows x64,
+Apple Silicon macOS, and Linux x64 packaging matrix using the WebEngine prototype runtime.
 
-The publication job was skipped as intended because the build did not use a version tag.
-Artifact creation proves the packaging pipeline, but not clean installation, runtime camera
-compatibility, signing, or long-duration stability.
+### Native MJPEG runtime
+
+On July 22, 2026, GitHub Actions release run `29894865275` passed lint, formatting, thirteen
+unit tests, source compilation, and all three native packaging jobs. Removing WebEngine reduced
+the uploaded platform artifacts substantially:
+
+| Platform artifact | WebEngine build | Native build | Reduction |
+|---|---:|---:|---:|
+| Windows x64 | 346.0 MB | 70.1 MB | 79.7% |
+| Linux x64 | 224.4 MB | 73.1 MB | 67.4% |
+| macOS arm64 | 167.4 MB | 28.1 MB | 83.2% |
+
+The publication job remains tag-only. Artifact creation proves the packaging pipeline, but not
+clean installation, runtime printer compatibility, signing, accessibility, or long-duration
+stability.
 
 ## Required release gates
 
@@ -29,21 +38,23 @@ compatibility, signing, or long-duration stability.
 - [x] Multiple named cameras
 - [x] Automatic camera cycling
 - [x] Local state persistence
-- [x] Screenshot and always-on-top behavior
+- [x] Original-frame screenshots and always-on-top behavior
+- [x] Native MJPEG/JPEG viewer with bounded reconnect behavior
+- [x] About/privacy/trademark/safety screen
 - [ ] Enable/disable and reorder UI
 - [ ] Connection test with timeout and useful diagnostics
 - [ ] Grid view or explicit decision to defer it
 - [ ] First-run onboarding
-- [ ] About/privacy/trademark screens
 
 ### Quality
 
-- [x] Domain and persistence unit tests
-- [x] Ruff and pytest CI
+- [x] Domain, persistence, and stream-parser unit tests
+- [x] Ruff, formatting, pytest, and source-compilation CI
 - [x] Native packaging jobs execute successfully on all three CI targets
+- [x] Reconnect state machine implemented with bounded backoff
 - [ ] GUI smoke tests on all three operating systems
 - [ ] Eight-hour two-printer soak test
-- [ ] Offline/reconnect test
+- [ ] Physical offline/disconnect/reconnect test
 - [ ] Upgrade and corrupted-config test on packaged builds
 - [ ] Accessibility review
 
@@ -70,8 +81,9 @@ compatibility, signing, or long-duration stability.
 
 - [x] Source-install instructions
 - [x] Linux native bundle build
+- [x] WebEngine/Chromium sandbox dependency removed
 - [ ] Test current CachyOS in a clean VM or physical host
-- [ ] Validate Qt WebEngine sandbox behavior
+- [ ] Validate native Qt Network bundle with live streams on CachyOS
 - [ ] Choose and test AppImage/AUR/Flatpak packaging
 - [ ] Desktop icon and menu integration
 
@@ -81,10 +93,11 @@ compatibility, signing, or long-duration stability.
 - [x] Trademark/non-affiliation statement
 - [x] Local-only and no-telemetry scope
 - [x] Credentials rejected in URL configuration
+- [x] Tagged release workflow generates checksums and provenance attestations
 - [ ] Dependency license inventory
 - [ ] Threat-model review
 - [ ] Vulnerability reporting address confirmed
-- [ ] Tagged-release checksums and provenance attestation
+- [ ] Validate checksums and attestations on the first tagged prerelease
 
 ### Portfolio and launch
 
@@ -98,25 +111,25 @@ compatibility, signing, or long-duration stability.
 
 | Platform | Required device | Status |
 |---|---|---|
-| Windows 11 x64 | Windows workstation | CI build passed; clean install pending |
-| macOS 14+ arm64 | Apple Silicon Mac | CI build passed; clean install pending |
-| CachyOS current | x64 PC or VM | Linux CI build passed; CachyOS test pending |
-| Printer A | FDM printer and camera | Pending model and soak test |
-| Printer B | Resin printer and camera | Pending model and soak test |
+| Windows 11 x64 | Windows workstation | Native CI build passed; clean install pending |
+| macOS 14+ arm64 | Apple Silicon Mac | Native CI build passed; clean install pending |
+| CachyOS current | x64 PC or VM | Native Linux build passed; CachyOS test pending |
+| Printer A | FDM printer and camera | Pending model and eight-hour soak test |
+| Printer B | Resin printer and camera | Pending model and eight-hour soak test |
 
 ## Version strategy
 
 - `0.1.x`: core camera management and build pipeline
-- `0.2.x`: hardware beta, diagnostics, reconnection
+- `0.2.x`: native runtime, hardware beta, diagnostics, and reconnection
 - `0.3.x`: grid view and UX polish
 - `0.9.x`: signed release candidates
 - `1.0.0`: stable public release
 
 ## Immediate next work
 
-1. Add connection probing, reconnection behavior, and structured local logs.
-2. Confirm the exact FDM and resin printer models and stream URLs during hardware testing.
-3. Install the unsigned beta on Windows, Apple Silicon, and CachyOS and record results.
-4. Run an eight-hour two-camera soak test with disconnect and reconnect scenarios.
-5. Add the product icon, screenshots, onboarding, and accessibility polish.
-6. Complete signing requirements before broad distribution.
+1. Add connection probing, structured local logs, and redacted diagnostics export.
+2. Add camera enable/disable, reordering, and first-run onboarding.
+3. Confirm the exact FDM and resin printer models and stream URLs during hardware testing.
+4. Install the unsigned beta on Windows, Apple Silicon, and CachyOS and record results.
+5. Run an eight-hour two-camera soak test with disconnect and reconnect scenarios.
+6. Add the product icon, screenshots, accessibility polish, and signing configuration.

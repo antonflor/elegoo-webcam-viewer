@@ -2,7 +2,7 @@
 
 **Document status:** Active source of truth  
 **Target release:** `v1.0.0` public release  
-**Current implementation:** `v0.1.0-alpha`
+**Current implementation:** `v0.2.0a1`
 
 ## 1. Product statement
 
@@ -18,7 +18,7 @@ not claim to replace ELEGOO Matrix, a slicer, printer firmware, or a safety syst
 
 A maker with an FDM printer and a resin printer currently has to use separate browser tabs,
 a phone application, or manually replace one hard-coded camera URL. The original prototype
-solves only one stream on one Windows computer and has no installer, release automation,
+solved only one stream on one Windows computer and had no installer, release automation,
 tests, compatibility contract, diagnostics, or public-support documentation.
 
 ## 3. Goals
@@ -39,6 +39,7 @@ tests, compatibility contract, diagnostics, or public-support documentation.
 - Extracting Matrix tokens, intercepting app traffic, or relying on undocumented cloud APIs.
 - AI failure detection or unattended safety guarantees.
 - Storing usernames or passwords in the JSON configuration.
+- Rendering arbitrary camera web dashboards or supporting every video protocol.
 
 ## 5. Users and primary scenarios
 
@@ -70,12 +71,15 @@ Uses the same camera configuration concepts on Windows, an Apple Silicon Mac, an
 
 ### FR-2 Viewer
 
-- Display the selected stream in an embedded browser surface.
+- Display a direct MJPEG stream or JPEG snapshot endpoint with a native Qt Network client.
 - Support ELEGOO MJPEG streams using the known `:3031/video` pattern.
-- Show connecting, loaded, and failed states.
-- Reload manually and recover from a crashed renderer.
+- Extract JPEG frames across arbitrary network chunk boundaries.
+- Show connecting, live, failed, and reconnecting states.
+- Reconnect ended or failed streams with bounded exponential backoff.
+- Bound malformed or incomplete stream buffering.
 
-**Acceptance:** A disconnected printer produces a visible failure status without crashing.
+**Acceptance:** A disconnected printer produces a visible failure status and reconnects without
+crashing or growing memory without limit.
 
 ### FR-3 Multi-camera navigation
 
@@ -89,7 +93,7 @@ Uses the same camera configuration concepts on Windows, an Apple Silicon Mac, an
 
 ### FR-4 Screenshots
 
-- Capture the visible stream surface.
+- Save the original decoded camera frame rather than a rendered window capture.
 - Default to the user Pictures directory.
 - Include camera name and timestamp in the suggested filename.
 - Support PNG and JPEG.
@@ -99,6 +103,7 @@ Uses the same camera configuration concepts on Windows, an Apple Silicon Mac, an
 - Resizable window with persisted geometry.
 - Optional always-on-top behavior.
 - Keyboard shortcuts for common actions.
+- About screen with privacy, trademark, and safety positioning.
 - No mandatory account, analytics, or internet service.
 
 ### FR-6 Diagnostics (v0.2)
@@ -110,7 +115,7 @@ Uses the same camera configuration concepts on Windows, an Apple Silicon Mac, an
 ### FR-7 Grid view (v0.3)
 
 - Optional 2-up and 4-up grid.
-- Limit concurrently active browser surfaces to control memory use.
+- Limit concurrently active stream widgets to control bandwidth and memory use.
 - Cycle mode remains available for low-resource systems.
 
 ## 7. Non-functional requirements
@@ -121,20 +126,22 @@ Uses the same camera configuration concepts on Windows, an Apple Silicon Mac, an
 - Validate URLs before use.
 - No embedded secrets in configuration.
 - Atomic state writes and corrupt-state backup.
-- Document that HTTP streams are unencrypted and should remain on trusted networks/VPNs.
+- Document that HTTP streams are unencrypted and should remain on trusted networks or VPNs.
 - Publish SHA-256 checksums for release assets.
 
 ### Reliability
 
-- Unit coverage for state validation, migration, and persistence.
-- Renderer termination recovers without application exit.
+- Unit coverage for state validation, migration, persistence, and frame parsing.
+- Network reply replacement cannot terminate or corrupt a newer active stream.
+- Ended and failed streams reconnect without application exit.
 - State format includes a schema version and migration strategy.
 
 ### Performance
 
-- Idle memory target: under 350 MB with one active WebEngine stream.
+- Idle memory target: under 200 MB with one active native stream.
 - Startup target: under 5 seconds on supported hardware after first launch.
 - UI interactions remain responsive when a camera is offline.
+- Stream parser buffer is capped at 16 MiB per active stream.
 
 ### Accessibility
 
@@ -154,19 +161,25 @@ Uses the same camera configuration concepts on Windows, an Apple Silicon Mac, an
 ```text
 PyQt6 desktop shell
 ├── Main window and camera navigation
-├── One active QWebEngineView (v0.1)
+├── One active MjpegViewer
+│   ├── Qt Network request/reply lifecycle
+│   ├── Bounded MJPEG/JPEG frame parser
+│   ├── Frame scaling and original-frame screenshots
+│   └── Reconnect timer with bounded backoff
 ├── Dialogs and desktop actions
 ├── Domain model (no Qt dependency)
 ├── Atomic JSON state repository
 └── Future provider adapters
-    ├── Generic HTTP/MJPEG
+    ├── Generic MJPEG/JPEG
     ├── Documented ELEGOO LAN APIs
     ├── Moonraker
     └── OctoPrint
 ```
 
-The single active browser surface is deliberate: it supports cycling while avoiding one
-Chromium renderer per configured printer. Grid view will introduce a bounded view pool.
+The single active native stream is deliberate: it supports cycling while minimizing network,
+memory, and decoder use. Grid view will introduce a bounded stream-widget pool. The project
+will not restore a general embedded browser to add protocols; new formats require explicit,
+testable adapters. See `docs/ADR-0001-native-mjpeg.md`.
 
 ## 9. Configuration contract
 
@@ -201,9 +214,9 @@ Default platform-specific location is selected by `platformdirs`.
 - **Source:** Python package and tagged source archive.
 
 A raw PyInstaller `.exe` is acceptable for alpha testing, but it is not the finished Windows
-product. The current prototype is unusually large because Qt WebEngine includes Chromium and
-because one-file mode embeds all dependencies. Public releases prefer an installer or an
-on-directory portable bundle for faster startup and clearer provenance.
+product. Public releases prefer an installer or a one-directory portable bundle for faster
+startup and clearer provenance. Removing Qt WebEngine and Chromium is expected to materially
+reduce all native artifact sizes; the build matrix records the actual result before merge.
 
 ## 11. Release milestones
 
@@ -213,7 +226,7 @@ on-directory portable bundle for faster startup and clearer provenance.
 - Preserve screenshot and always-on-top behavior.
 - Establish independent-product naming and trademark disclaimer.
 
-### M1 — Product foundation (`v0.1.0-alpha`)
+### M1 — Product foundation (`v0.1.0-alpha`, complete)
 
 - Package layout and versioning.
 - Multi-camera CRUD.
@@ -225,6 +238,7 @@ on-directory portable bundle for faster startup and clearer provenance.
 
 ### M2 — Hardware beta (`v0.2.0`)
 
+- Replace WebEngine with a native MJPEG/JPEG runtime.
 - Test one FDM and one resin ELEGOO printer.
 - Add connection-test button and diagnostics export.
 - Add structured local logs and redaction tests.

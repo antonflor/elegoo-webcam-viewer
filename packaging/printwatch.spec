@@ -5,6 +5,9 @@ import sys
 project_root = Path.cwd()
 src_root = project_root / "src"
 entrypoint = src_root / "printwatch" / "__main__.py"
+sys.path.insert(0, str(src_root))
+
+from printwatch import __version__
 
 block_cipher = None
 
@@ -13,11 +16,11 @@ a = Analysis(
     pathex=[str(src_root)],
     binaries=[],
     datas=[],
-    hiddenimports=["PyQt6.QtWebEngineCore", "PyQt6.QtWebEngineWidgets"],
+    hiddenimports=["PyQt6.QtNetwork"],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=["PyQt6.QtWebEngineCore", "PyQt6.QtWebEngineWidgets"],
     noarchive=False,
     optimize=1,
 )
@@ -57,7 +60,7 @@ if sys.platform == "darwin":
         name="PrintWatch Desktop.app",
         icon=None,
         bundle_identifier="xyz.montylabs.printwatch",
-        version="0.1.0",
+        version=__version__,
         info_plist={
             "NSHighResolutionCapable": True,
             "LSMinimumSystemVersion": "14.0",
