@@ -14,12 +14,18 @@ _URL_PATTERN = re.compile(r"https?://[^\s\]\[(){}<>\"']+", re.IGNORECASE)
 _IPV4_PATTERN = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 _IPV6_PATTERN = re.compile(r"\b(?:[0-9A-Fa-f]{1,4}:){2,}[0-9A-Fa-f:]+\b")
 _MAX_LOG_BYTES = 256 * 1024
+_SAFE_ENDPOINT_PATHS = {"/", "/mjpeg", "/snapshot.jpg", "/stream", "/video"}
 
 
 def redact_text(text: str) -> str:
     text = _URL_PATTERN.sub("<redacted-url>", text)
     text = _IPV4_PATTERN.sub("<redacted-ip>", text)
     return _IPV6_PATTERN.sub("<redacted-ip>", text)
+
+
+def _redacted_endpoint_path(path: str) -> str:
+    normalized = path or "/"
+    return normalized if normalized in _SAFE_ENDPOINT_PATHS else "<redacted-path>"
 
 
 def redacted_state(state: AppState) -> dict[str, object]:
@@ -33,7 +39,7 @@ def redacted_state(state: AppState) -> dict[str, object]:
                 "enabled": camera.enabled,
                 "scheme": parsed.scheme,
                 "port": parsed.port,
-                "path": parsed.path or "/",
+                "path": _redacted_endpoint_path(parsed.path),
             }
         )
 
@@ -78,6 +84,8 @@ def export_diagnostics(
     app_version: str,
     log_path: Path | None = None,
 ) -> Path:
+    if destination.suffix.lower() != ".zip":
+        destination = destination.with_suffix(".zip")
     destination.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(destination, mode="w", compression=ZIP_DEFLATED) as archive:
         archive.writestr(
@@ -93,6 +101,7 @@ def export_diagnostics(
             "README.txt",
             "PrintWatch Desktop diagnostics\n\n"
             "This bundle omits camera names, hosts, IP addresses, notes, query strings, "
-            "screenshots, and credentials. Review the files before sharing them.\n",
+            "screenshots, credentials, and nonstandard endpoint paths. Review the files "
+            "before sharing them.\n",
         )
     return destination
