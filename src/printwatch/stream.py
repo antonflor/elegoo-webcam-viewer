@@ -114,10 +114,11 @@ class MjpegViewer(QWidget):
         )
         request.setTransferTimeout(15_000)
 
-        self._reply = self._manager.get(request)
-        self._reply.readyRead.connect(self._read_available_data)
-        self._reply.errorOccurred.connect(self._network_error)
-        self._reply.finished.connect(self._reply_finished)
+        reply = self._manager.get(request)
+        self._reply = reply
+        reply.readyRead.connect(self._read_available_data)
+        reply.errorOccurred.connect(self._network_error)
+        reply.finished.connect(self._reply_finished)
 
     def reload(self) -> None:
         if self._url:
@@ -129,6 +130,7 @@ class MjpegViewer(QWidget):
         if self._reply is not None:
             reply = self._reply
             self._reply = None
+            self._disconnect_reply(reply)
             reply.abort()
             reply.deleteLater()
         self._parser.reset()
@@ -143,10 +145,28 @@ class MjpegViewer(QWidget):
             return False
         return self._source_pixmap.save(path)
 
+    def _disconnect_reply(self, reply: QNetworkReply) -> None:
+        for signal, slot in (
+            (reply.readyRead, self._read_available_data),
+            (reply.errorOccurred, self._network_error),
+            (reply.finished, self._reply_finished),
+        ):
+            try:
+                signal.disconnect(slot)
+            except (TypeError, RuntimeError):
+                pass
+
+    def _current_sender_reply(self) -> QNetworkReply | None:
+        sender = self.sender()
+        if isinstance(sender, QNetworkReply) and sender is self._reply:
+            return sender
+        return None
+
     def _read_available_data(self) -> None:
-        if self._reply is None:
+        reply = self._current_sender_reply()
+        if reply is None:
             return
-        frames = self._parser.feed(bytes(self._reply.readAll()))
+        frames = self._parser.feed(bytes(reply.readAll()))
         self._display_frames(frames)
 
     def _display_frames(self, frames: Iterable[bytes]) -> None:
@@ -163,16 +183,18 @@ class MjpegViewer(QWidget):
         self._received_frame = True
         self._retry_attempt = 0
         self._render_scaled_frame()
-        self.status_changed.emit(
-            f"Live — {newest_pixmap.width()}×{newest_pixmap.height()}"
-        )
+        self.status_changed.emit(f"Live — {newest_pixmap.width()}×{newest_pixmap.height()}")
         self.frame_received.emit(newest_pixmap.size())
 
     def _network_error(self, error: QNetworkReply.NetworkError) -> None:
-        if self._stopping or error == QNetworkReply.NetworkError.OperationCanceledError:
+        reply = self._current_sender_reply()
+        if (
+            reply is None
+            or self._stopping
+            or error == QNetworkReply.NetworkError.OperationCanceledError
+        ):
             return
-        detail = self._reply.errorString() if self._reply is not None else error.name
-        self.status_changed.emit(f"Camera connection failed: {detail}")
+        self.status_changed.emit(f"Camera connection failed: {reply.errorString()}")
         if not self.has_frame:
             self._image_label.setText(
                 "Could not reach this camera.\n\n"
@@ -180,10 +202,12 @@ class MjpegViewer(QWidget):
             )
 
     def _reply_finished(self) -> None:
-        reply = self._reply
+        reply = self._current_sender_reply()
+        if reply is None:
+            return
         self._reply = None
-        if reply is not None:
-            reply.deleteLater()
+        self._disconnect_reply(reply)
+        reply.deleteLater()
         if self._stopping or not self._url:
             return
 
@@ -199,9 +223,8 @@ class MjpegViewer(QWidget):
     def _render_scaled_frame(self) -> None:
         if self._source_pixmap.isNull():
             return
-        target = self._image_label.size()
         scaled = self._source_pixmap.scaled(
-            target,
+            self._image_label.size(),
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
