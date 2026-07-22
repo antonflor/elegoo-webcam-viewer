@@ -6,7 +6,19 @@ from pathlib import Path
 
 from platformdirs import user_log_dir
 
+from printwatch.diagnostics import redact_text
+
 LOGGER_NAME = "printwatch"
+
+
+class PrivacyFormatter(logging.Formatter):
+    """Redact URLs, network addresses, and the user's home directory."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        rendered = super().format(record)
+        rendered = redact_text(rendered)
+        home = str(Path.home())
+        return rendered.replace(home, "<home>") if home else rendered
 
 
 def default_log_path() -> Path:
@@ -34,7 +46,7 @@ def configure_logging(path: Path | None = None) -> Path:
         encoding="utf-8",
     )
     handler.setFormatter(
-        logging.Formatter(
+        PrivacyFormatter(
             fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
             datefmt="%Y-%m-%dT%H:%M:%S",
         )
