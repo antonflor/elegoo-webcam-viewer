@@ -36,8 +36,7 @@ def test_redacted_state_hides_nonstandard_endpoint_paths() -> None:
 
 def test_redact_text_removes_urls_ipv4_and_ipv6() -> None:
     text = (
-        "camera http://printer.local:3031/video failed at 192.168.1.20 and "
-        "fe80::1ff:fe23:4567:890a"
+        "camera http://printer.local:3031/video failed at 192.168.1.20 and fe80::1ff:fe23:4567:890a"
     )
     redacted = redact_text(text)
     assert "printer.local" not in redacted
@@ -76,9 +75,7 @@ def test_export_bundle_contains_only_redacted_data(tmp_path: Path) -> None:
             "state-redacted.json",
             "system.json",
         }
-        combined = "\n".join(
-            archive.read(name).decode("utf-8") for name in archive.namelist()
-        )
+        combined = "\n".join(archive.read(name).decode("utf-8") for name in archive.namelist())
 
     for sensitive in (
         "Tony's FDM",
