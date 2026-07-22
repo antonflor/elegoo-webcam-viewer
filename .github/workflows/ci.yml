@@ -17,21 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          show-progress: false
       - name: Lint
-        id: lint
-        continue-on-error: true
         uses: astral-sh/ruff-action@v3
         with:
-          args: check . --output-format=concise --output-file=ruff-output.txt
-      - name: Upload lint diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruff-output-${{ github.run_id }}
-          path: ruff-output.txt
-      - name: Enforce lint result
-        if: steps.lint.outcome == 'failure'
-        run: exit 1
+          args: check .
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -41,19 +32,6 @@ jobs:
       - name: Format
         run: ruff format --check .
       - name: Test
-        id: test
-        continue-on-error: true
-        run: >-
-          pytest --cov=printwatch --cov-report=term-missing
-          --junitxml=pytest-results.xml
-      - name: Upload test diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-results-${{ github.run_id }}
-          path: pytest-results.xml
-      - name: Enforce test result
-        if: steps.test.outcome == 'failure'
-        run: exit 1
+        run: pytest --cov=printwatch --cov-report=term-missing
       - name: Compile
         run: python -m compileall src
