@@ -185,7 +185,7 @@ class MjpegViewer(QWidget):
         self._received_frame = True
         self._retry_attempt = 0
         self._render_scaled_frame()
-        self.status_changed.emit(f"Live — {newest_pixmap.width()}×{newest_pixmap.height()}")
+        self.status_changed.emit(f"Live — {newest_pixmap.width()}x{newest_pixmap.height()}")
         self.frame_received.emit(newest_pixmap.size())
 
     def _network_error(self, error: QNetworkReply.NetworkError) -> None:
