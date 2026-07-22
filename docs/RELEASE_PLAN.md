@@ -4,9 +4,11 @@
 
 The original prototype was approximately **20–25% of a public desktop product**: the core idea
 worked, but it supported only one URL, used a fixed window, had no tests or CI, and distributed
-an unsigned 190 MB one-file executable. The `v0.2.0a1` foundation now has multi-camera support,
-a native MJPEG/JPEG runtime, thirteen tests, green CI, and validated native artifacts. This is
-roughly **70% of an honest public beta**, but it is not yet a stable `v1.0.0` release.
+an unsigned 190 MB one-file executable. The `v0.2.0a2` software now includes ordered
+multi-camera management, a native MJPEG/JPEG runtime, connection probing, rotating privacy-safe
+logs, redacted diagnostics, onboarding, nineteen tests, and validated cross-platform packaging.
+This is roughly **80% of an honest public beta**, but it is not a stable `v1.0.0` release until
+the remaining hands-on hardware, signing, installation, and accessibility gates pass.
 
 ## Build validation record
 
@@ -27,6 +29,12 @@ the uploaded platform artifacts substantially:
 | Linux x64 | 224.4 MB | 73.1 MB | 67.4% |
 | macOS arm64 | 167.4 MB | 28.1 MB | 83.2% |
 
+### Beta operations
+
+The `v0.2.0a2` gate adds privacy-focused diagnostics, local log redaction, independent camera
+probing, camera enable/disable and reordering, and first-run onboarding. The final PR matrix
+must pass nineteen tests and rebuild all three platform artifacts before merge.
+
 The publication job remains tag-only. Artifact creation proves the packaging pipeline, but not
 clean installation, runtime printer compatibility, signing, accessibility, or long-duration
 stability.
@@ -41,17 +49,19 @@ stability.
 - [x] Original-frame screenshots and always-on-top behavior
 - [x] Native MJPEG/JPEG viewer with bounded reconnect behavior
 - [x] About/privacy/trademark/safety screen
-- [ ] Enable/disable and reorder UI
-- [ ] Connection test with timeout and useful diagnostics
-- [ ] Grid view or explicit decision to defer it
-- [ ] First-run onboarding
+- [x] Enable/disable and reorder UI
+- [x] Connection test with timeout and valid-frame verification
+- [x] Redacted diagnostics export and rotating local logs
+- [x] First-run onboarding
+- [ ] Grid view or explicit decision to defer it from `v1.0`
 
 ### Quality
 
-- [x] Domain, persistence, and stream-parser unit tests
+- [x] Domain, persistence, parser, redaction, diagnostics, and logging tests
 - [x] Ruff, formatting, pytest, and source-compilation CI
 - [x] Native packaging jobs execute successfully on all three CI targets
 - [x] Reconnect state machine implemented with bounded backoff
+- [x] Sensitive-value fixtures are absent from exported diagnostics
 - [ ] GUI smoke tests on all three operating systems
 - [ ] Eight-hour two-printer soak test
 - [ ] Physical offline/disconnect/reconnect test
@@ -93,6 +103,8 @@ stability.
 - [x] Trademark/non-affiliation statement
 - [x] Local-only and no-telemetry scope
 - [x] Credentials rejected in URL configuration
+- [x] URL, IP, and home-directory log redaction
+- [x] Diagnostics omit names, hosts, notes, query strings, credentials, and screenshots
 - [x] Tagged release workflow generates checksums and provenance attestations
 - [ ] Dependency license inventory
 - [ ] Threat-model review
@@ -127,9 +139,9 @@ stability.
 
 ## Immediate next work
 
-1. Add connection probing, structured local logs, and redacted diagnostics export.
-2. Add camera enable/disable, reordering, and first-run onboarding.
-3. Confirm the exact FDM and resin printer models and stream URLs during hardware testing.
-4. Install the unsigned beta on Windows, Apple Silicon, and CachyOS and record results.
-5. Run an eight-hour two-camera soak test with disconnect and reconnect scenarios.
-6. Add the product icon, screenshots, accessibility polish, and signing configuration.
+1. Install the unsigned beta on Windows, Apple Silicon, and CachyOS and record results.
+2. Confirm the exact FDM and resin printer models and stream URLs in the compatibility table.
+3. Run an eight-hour two-camera soak test with disconnect and reconnect scenarios.
+4. Decide whether grid view is a `v1.0` requirement or a post-launch feature.
+5. Add the product icon, screenshots, accessibility polish, and signing configuration.
+6. Complete dependency-license and threat-model review before the release candidate.
