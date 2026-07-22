@@ -12,9 +12,9 @@ product for Windows, macOS, and Linux.
 ## Product status
 
 **Alpha / pre-release.** The core multi-camera experience is implemented, but code signing,
-installer validation, hardware compatibility testing, accessibility review, and release
-artifacts must pass the gates in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md) before a
-stable public release.
+installer validation, hardware compatibility testing, accessibility review, and the remaining
+gates in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md) must pass before a stable public
+release.
 
 ## What works today
 
@@ -60,9 +60,10 @@ pip install -e .
 printwatch
 ```
 
-A signed Windows installer, Apple Silicon `.app`, and Linux release package are produced by
-the release workflow. The Linux package is expected to work on current CachyOS systems, but
-CachyOS remains a required release-test target.
+The release workflow currently produces unsigned beta artifacts: a Windows installer and
+portable ZIP, an Apple Silicon macOS app archive, and a Linux bundle. Windows signing and
+macOS signing/notarization remain public-release gates. The Linux bundle builds successfully
+on the CI target, but current CachyOS remains a required hands-on compatibility test.
 
 ## Development
 
