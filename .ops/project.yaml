@@ -1,0 +1,55 @@
+schema_version: 1
+
+project:
+  id: printwatch-desktop
+  name: PrintWatch Desktop
+  repository: antonflor/elegoo-webcam-viewer
+  default_branch: main
+  visibility: private
+  lifecycle: validating
+  health: blocked
+  owners:
+    - Tony
+
+current:
+  milestone: M2-hardware-beta
+  active_specs:
+    - docs/SDD.md
+    - docs/RELEASE_PLAN.md
+  next_action: Install the v0.2.0a2 unsigned beta on Windows and record clean-install and live-camera results.
+
+blockers:
+  - id: BLK-001
+    type: dependency
+    summary: Public-release validation requires hands-on tests across three operating systems and two real printer cameras.
+    owner: Tony
+    severity: high
+    since: "2026-07-22"
+    blocks:
+      - M2-hardware-beta
+      - M5-public-release
+    can_agent_resolve: false
+    evidence:
+      - docs/RELEASE_PLAN.md
+
+dependencies:
+  projects: []
+  services:
+    - github-actions
+  external:
+    - Windows 11 workstation
+    - Apple Silicon Mac
+    - Current CachyOS system
+    - FDM and resin printer camera streams
+
+links:
+  production: null
+  releases: https://github.com/antonflor/elegoo-webcam-viewer/releases
+  documentation: docs/SDD.md
+
+data_policy:
+  repository: private
+  cloud_code_allowed: true
+  email_context: prohibited
+  production_data: prohibited
+  secrets: prohibited
