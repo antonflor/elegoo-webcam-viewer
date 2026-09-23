@@ -1,0 +1,61 @@
+schema_version: 1
+
+runner:
+  profile: python-pyqt-desktop
+  requires:
+    - git
+    - python
+  require_ac_power: true
+  require_idle_machine: false
+
+commands:
+  doctor: python --version
+  bootstrap: python -m pip install -e ".[dev]"
+  dev: printwatch
+  check: ruff check . && ruff format --check . && pytest --cov=printwatch --cov-report=term-missing && python -m compileall src
+  build: pyinstaller --clean --noconfirm packaging/printwatch.spec
+
+paths:
+  allow_write:
+    - "**"
+  deny_read:
+    - "**/.env"
+    - "**/.env.*"
+    - "~/.ssh/**"
+  deny_write:
+    - ".git/**"
+    - "**/.env"
+    - "**/.env.*"
+
+network:
+  mode: allowlist
+  allow_domains:
+    - pypi.org
+    - files.pythonhosted.org
+    - github.com
+    - api.github.com
+
+limits:
+  concurrent_write_runs: 1
+  concurrent_read_runs: 2
+  maximum_repair_loops: 1
+  maximum_changed_files: 100
+  timeout_minutes: 180
+
+autonomy:
+  inspect_repository: automatic
+  run_tests: automatic
+  modify_worktree: approval_required
+  open_draft_pr: approval_required
+  merge_pr: prohibited
+  deploy_production: prohibited
+  production_migration: prohibited
+  send_external_message: prohibited
+
+schedules:
+  - id: nightly-verification
+    enabled: false
+    cron: "30 2 * * *"
+    timezone: America/Chicago
+    job_type: runner.check
+    missed_run: skip
