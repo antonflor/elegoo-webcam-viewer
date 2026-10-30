@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import os
 import threading
 import time
@@ -31,6 +32,28 @@ def qapp():
 
     app = QApplication.instance() or QApplication([])
     yield app
+    # Tear Qt down in a defined order. Leaving widgets, network managers, and the
+    # application for interpreter exit can crash (SIGBUS) on some Linux runners.
+    for widget in app.topLevelWidgets():
+        widget.close()
+        widget.deleteLater()
+    app.processEvents()
+    gc.collect()
+    app.processEvents()
+    app.shutdown()
+
+
+@pytest.fixture(autouse=True)
+def _release_qt_objects(request) -> Iterator[None]:
+    """Delete parentless Qt objects a test created before the next test starts."""
+    yield
+    if "qapp" in request.fixturenames:
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance()
+        gc.collect()
+        if app is not None:
+            app.processEvents()
 
 
 @pytest.fixture
