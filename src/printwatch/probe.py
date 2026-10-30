@@ -5,7 +5,7 @@ from contextlib import suppress
 from PySide6.QtCore import QElapsedTimer, QObject, QTimer, QUrl, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
-from printwatch.mjpeg import MjpegFrameParser
+from printwatch.mjpeg import USER_AGENT, MjpegFrameParser
 
 
 class CameraProbe(QObject):
@@ -37,7 +37,7 @@ class CameraProbe(QObject):
             b"Accept",
             b"multipart/x-mixed-replace,image/jpeg,*/*;q=0.5",
         )
-        request.setRawHeader(b"User-Agent", b"PrintWatch-Desktop/0.2")
+        request.setRawHeader(b"User-Agent", USER_AGENT)
         request.setAttribute(
             QNetworkRequest.Attribute.CacheLoadControlAttribute,
             QNetworkRequest.CacheLoadControl.AlwaysNetwork,

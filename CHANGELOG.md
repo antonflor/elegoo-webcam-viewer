@@ -4,6 +4,36 @@ All notable changes are documented here. The project follows Semantic Versioning
 
 ## [Unreleased]
 
+## [0.3.0a1] - 2026-10-30
+
+### Added
+
+- Dark theme, app icon, and redesigned main window: camera header with a Live / Connecting /
+  Offline badge, resolution and frame rate, sidebar status dots, and a first-run empty state.
+- Next/previous camera shortcuts (Ctrl+Tab / Ctrl+Shift+Tab) and shortcuts for auto-cycle and
+  pin-to-top; toolbar tooltips list each shortcut.
+- `scripts/demo_camera.py`: simulated FDM, resin, and snapshot cameras for development and demos.
+- `scripts/build_icons.py` and Windows/macOS icons for packaged builds and the installer.
+- Integration tests that exercise the stream viewer, connection test, dialogs, and main window
+  against a local camera server.
+
+### Changed
+
+- Switched from PyQt6 (GPLv3) to PySide6-Essentials (LGPLv3) so MIT-licensed binaries can be
+  distributed; packaged Windows build shrank from 113 MB to 94 MB.
+- Manual camera switches restart the auto-cycle countdown.
+- Screenshots default to the operating system's Pictures folder.
+- The Windows installer file name and version now follow the app version.
+- CI installs the Qt runtime libraries and runs GUI tests headlessly.
+
+### Fixed
+
+- Switching to an unreachable camera kept showing the previous camera's last frame.
+- An offline camera flickered between "Connecting" and "Offline" while retrying.
+- The startup "ready" message hid the first camera's connection status.
+- Editing a camera restarted its stream twice.
+- The HTTP User-Agent reported a stale version.
+
 ### Added
 
 - Multi-camera profile management.
