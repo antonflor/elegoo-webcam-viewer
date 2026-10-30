@@ -46,6 +46,7 @@ jobs:
             PrintWatch-Desktop-Windows-x64-Portable.zip
             PrintWatch-Desktop-*-Windows-x64-Setup.exe
           if-no-files-found: error
+          retention-days: 1
 
   macos-arm64:
     needs: test
@@ -69,6 +70,7 @@ jobs:
           name: macos-arm64
           path: PrintWatch-Desktop-macOS-arm64.zip
           if-no-files-found: error
+          retention-days: 1
 
   linux-x64:
     needs: test
@@ -91,6 +93,7 @@ jobs:
           name: linux-x64
           path: PrintWatch-Desktop-Linux-x64.tar.gz
           if-no-files-found: error
+          retention-days: 1
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
