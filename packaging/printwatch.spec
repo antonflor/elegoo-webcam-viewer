@@ -16,11 +16,11 @@ a = Analysis(
     pathex=[str(src_root)],
     binaries=[],
     datas=[],
-    hiddenimports=["PyQt6.QtNetwork"],
+    hiddenimports=["PySide6.QtNetwork"],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["PyQt6.QtWebEngineCore", "PyQt6.QtWebEngineWidgets"],
+    excludes=["PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets", "PyQt6"],
     noarchive=False,
     optimize=1,
 )

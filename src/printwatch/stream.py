@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Iterable
 from contextlib import suppress
 
-from PyQt6.QtCore import QSize, Qt, QTimer, QUrl, pyqtSignal
-from PyQt6.QtGui import QPixmap, QResizeEvent
-from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import QSize, Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import QPixmap, QResizeEvent
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from printwatch.mjpeg import MjpegFrameParser
 
@@ -14,8 +14,8 @@ from printwatch.mjpeg import MjpegFrameParser
 class MjpegViewer(QWidget):
     """A lightweight Qt Network viewer for direct MJPEG or JPEG endpoints."""
 
-    status_changed = pyqtSignal(str)
-    frame_received = pyqtSignal(QSize)
+    status_changed = Signal(str)
+    frame_received = Signal(QSize)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
