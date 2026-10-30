@@ -2,7 +2,7 @@
 
 **Document status:** Active source of truth  
 **Target release:** `v1.0.0` public release  
-**Current implementation:** `v0.2.0a2`
+**Current implementation:** `v0.3.0a1`
 
 ## 1. Product statement
 
@@ -172,7 +172,7 @@ produces a diagnostics bundle containing none of those values.
 ## 8. Architecture
 
 ```text
-PyQt6 desktop shell
+PySide6 (Qt for Python) desktop shell
 ├── Main window and ordered camera navigation
 ├── One active MjpegViewer
 │   ├── Qt Network request/reply lifecycle

@@ -3,8 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from uuid import uuid4
 
-from PyQt6.QtCore import Qt, QUrl
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QDialog,

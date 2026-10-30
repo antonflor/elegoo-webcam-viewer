@@ -1,6 +1,6 @@
 #define MyAppName "PrintWatch Desktop"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.2.0-alpha.2"
+  #define MyAppVersion "0.0.0-dev"
 #endif
 #define MyAppPublisher "Monty Labs"
 #define MyAppURL "https://github.com/antonflor/elegoo-webcam-viewer"
@@ -22,6 +22,7 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\{#MyAppExeName}
+SetupIconFile=..\icons\printwatch.ico
 PrivilegesRequired=lowest
 
 [Files]

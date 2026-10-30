@@ -1,119 +1,167 @@
+<div align="center">
+
+<img src="src/printwatch/assets/printwatch.svg" width="96" alt="PrintWatch Desktop logo">
+
 # PrintWatch Desktop
 
-A local-first desktop app for viewing and cycling through multiple 3D-printer camera streams.
-It began as an ELEGOO webcam utility and is being developed into a public, cross-platform
-product for Windows, macOS, and Linux.
+**Every 3D-printer camera in one small desktop window.**
+Watch your FDM and resin printers side by side with your slicer — no phone, no browser tabs,
+no cloud account.
 
-> [!IMPORTANT]
-> PrintWatch Desktop is an independent open-source project. It is not affiliated with,
-> endorsed by, or supported by ELEGOO. ELEGOO and Matrix are trademarks of their respective
-> owners.
+[![CI](https://github.com/antonflor/elegoo-webcam-viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/antonflor/elegoo-webcam-viewer/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)
+![Windows | macOS | Linux](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-555)
+![Status: alpha](https://img.shields.io/badge/status-alpha-orange)
 
-## Product status
+<img src="docs/screenshots/live-fdm.png" alt="PrintWatch Desktop streaming a live FDM printer camera" width="860">
 
-**Alpha / hardware-beta candidate.** The core multi-camera and troubleshooting experience is
-implemented, but signing, clean-machine installation, live-printer soak testing, accessibility,
-and the remaining gates in [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md) must pass before a
-stable public release.
+</div>
 
-## What works today
+## Features
 
-- Add, edit, remove, enable, disable, and reorder multiple camera profiles.
-- View direct HTTP or HTTPS MJPEG/JPEG streams without an embedded browser.
-- Test a camera independently by waiting for one valid frame with a bounded timeout.
-- Automatically reconnect with bounded exponential backoff.
-- Automatically cycle between enabled cameras in the configured order.
-- Capture the original camera frame to PNG or JPEG.
-- Keep the window above other applications.
-- Save camera configuration locally with atomic writes and corrupt-file recovery.
-- Write bounded local logs with URL, IP, and home-directory redaction.
-- Export a diagnostics ZIP that omits camera names, hosts, notes, tokens, and screenshots.
-- Run from the same Python source on Windows, macOS, and Linux.
-- Build native artifacts through GitHub Actions.
+- **Multiple cameras, one window.** Add every printer, then switch from the sidebar or with
+  <kbd>Ctrl</kbd>+<kbd>Tab</kbd>.
+- **Auto-cycle.** Rotate through your enabled cameras on a timer from 5 seconds to an hour,
+  in the order you choose.
+- **Clear connection status.** Each camera shows a Live / Connecting / Offline badge plus
+  resolution and frame rate. Dropped streams reconnect on their own with backoff.
+- **One-click connection test.** Confirms the URL returns a real JPEG frame, not just an open
+  port.
+- **Full-resolution screenshots.** Saves the original camera frame as PNG or JPEG.
+- **Pin to top.** Keep a small camera window above your slicer or terminal.
+- **Private by design.** No account, analytics, telemetry, or cloud relay. Video goes straight
+  from the printer to your computer.
+- **Light.** A native Qt MJPEG pipeline with no embedded browser; about a 95 MB install.
 
-## Supported connections
+| Resin printer | Camera offline | First run |
+|---|---|---|
+| <img src="docs/screenshots/live-resin.png" alt="Resin printer live view"> | <img src="docs/screenshots/offline.png" alt="Offline camera with retry status"> | <img src="docs/screenshots/first-run.png" alt="First-run empty state"> |
 
-The initial release intentionally focuses on direct local camera streams:
+<sub>Screenshots use the bundled demo camera (`scripts/demo_camera.py`), which draws simulated
+printer feeds.</sub>
 
-- ELEGOO-style MJPEG stream: `http://<printer-ip>:3031/video`
-- Generic direct MJPEG stream
-- Direct JPEG snapshot endpoint, refreshed automatically
+## Supported cameras
 
-HTML camera dashboards, HLS, WebRTC, and RTSP are not supported in the initial release. This
-narrower protocol contract removes the Chromium/WebEngine runtime, reduces package size and
-attack surface, and makes Linux distribution simpler.
+| Camera | Example URL |
+|---|---|
+| ELEGOO printers with the built-in MJPEG camera | `http://<printer-ip>:3031/video` |
+| Any direct MJPEG stream (OctoPrint/mjpg-streamer, Crowsnest, ESP32-CAM, IP cameras) | `http://<host>:8080/?action=stream` |
+| A direct JPEG snapshot URL (refreshed automatically) | `http://<host>/snapshot.jpg` |
 
-Credentials embedded in URLs are rejected because the configuration is stored locally as
-plain JSON. Authenticated cameras need a future secure credential-store adapter.
+Not supported yet: HTML camera dashboards, HLS, WebRTC, and RTSP. URLs with embedded
+credentials (`http://user:pass@…`) are rejected because settings are stored as plain local JSON.
 
-## Privacy model
+> [!TIP]
+> To find an ELEGOO printer's IP address, open the network/Wi-Fi screen on the printer, or look
+> it up in your router's list of connected devices. Use **Test** after adding a camera to
+> confirm the stream works.
 
-PrintWatch has no account, analytics, telemetry, or cloud relay. Camera traffic goes directly
-from the desktop app to the configured local endpoint. The diagnostics exporter includes only
-platform metadata, redacted configuration facts, and a sanitized tail of the rotating local
-log. Review every diagnostics ZIP before sharing it.
+## Install
 
-HTTP streams are unencrypted. Keep them on a trusted LAN or a VPN you control; do not expose a
-printer camera port directly to the public internet.
+### Download
 
-## Install from source
+Prebuilt Windows (installer and portable ZIP), macOS (Apple Silicon), and Linux bundles are
+published on the [Releases page](https://github.com/antonflor/elegoo-webcam-viewer/releases).
+Beta builds are not code-signed yet, so Windows SmartScreen and macOS Gatekeeper will ask you
+to confirm the first launch.
 
-Python 3.11 or 3.12 is recommended.
+### From source
+
+Requires Python **3.11 or 3.12**.
 
 ```bash
+git clone https://github.com/antonflor/elegoo-webcam-viewer.git
+cd elegoo-webcam-viewer
 python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-python -m pip install --upgrade pip
+# Windows: .venv\Scripts\activate     macOS/Linux: source .venv/bin/activate
 pip install -e .
 printwatch
 ```
 
-### CachyOS / Arch Linux
+<details>
+<summary>Arch / CachyOS</summary>
 
 ```bash
 sudo pacman -S --needed python python-pip
-python -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -e .
 printwatch
 ```
 
-The release workflow currently produces unsigned beta artifacts: a Windows installer and
-portable ZIP, an Apple Silicon macOS app archive, and a Linux bundle. Windows signing and
-macOS signing/notarization remain public-release gates. The Linux bundle builds successfully
-on the CI target, but current CachyOS remains a required hands-on compatibility test.
+</details>
+
+## Usage
+
+1. Click **Add your first camera**, give it a name, and paste the stream URL.
+2. Press **Test** to check that the camera sends frames.
+3. Add more printers, then turn on **Cycle cameras** to rotate between them automatically.
+4. Use **Manage** to hide cameras or change the cycle order.
+
+| Shortcut | Action |
+|---|---|
+| <kbd>Ctrl</kbd>+<kbd>N</kbd> | Add camera |
+| <kbd>Ctrl</kbd>+<kbd>E</kbd> | Edit camera |
+| <kbd>Ctrl</kbd>+<kbd>T</kbd> | Test connection |
+| <kbd>F5</kbd> | Reconnect |
+| <kbd>Ctrl</kbd>+<kbd>Tab</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> | Next / previous camera |
+| <kbd>Ctrl</kbd>+<kbd>L</kbd> | Toggle auto-cycle |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> | Save screenshot |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> | Pin window on top |
+
+On macOS, use <kbd>Cmd</kbd> in place of <kbd>Ctrl</kbd>.
+
+## Privacy and security
+
+- Settings live in your user config folder; logs rotate and redact URLs, IP addresses, and
+  your home folder path.
+- **Diagnostics** exports a ZIP for bug reports that leaves out camera names, hosts, notes,
+  tokens, and images. Review it before sharing.
+- Printer camera streams are plain HTTP. Keep them on a trusted LAN or a VPN you control, and
+  never forward a printer camera port to the internet.
+
+See [SECURITY.md](SECURITY.md) to report a vulnerability.
 
 ## Development
 
 ```bash
 pip install -e ".[dev]"
-ruff check .
-ruff format --check .
-pytest
-python -m compileall src
+ruff check . && ruff format --check .
+pytest                                  # unit + local-network integration tests
+python scripts/demo_camera.py           # simulated cameras at http://127.0.0.1:3031
 ```
 
-## Building locally
+The demo server provides `/video` (FDM), `/resin` (resin), and `/snapshot` (single JPEG), so
+you can work on the app without a printer.
+
+Package a native build (it must run on each target OS):
 
 ```bash
-pip install -e ".[dev]"
 pyinstaller --clean --noconfirm packaging/printwatch.spec
 ```
 
-PyInstaller must run on each target operating system; it does not cross-compile native
-packages.
+Pushing a `v*` tag builds Windows, macOS, and Linux artifacts with checksums and build
+provenance, then publishes a GitHub Release. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Design and release documents
+### Project documents
 
-- [`docs/SDD.md`](docs/SDD.md) — product specification and implementation plan
-- [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md) — public-release gates and milestones
-- [`docs/ADR-0001-native-mjpeg.md`](docs/ADR-0001-native-mjpeg.md) — native stream-runtime decision and measured impact
-- [`docs/MATRIX_INTEGRATION.md`](docs/MATRIX_INTEGRATION.md) — safe integration strategy
-- [`SECURITY.md`](SECURITY.md) — vulnerability reporting and local-data model
+- [`docs/SDD.md`](docs/SDD.md): product specification
+- [`docs/RELEASE_PLAN.md`](docs/RELEASE_PLAN.md): release gates and milestones
+- [`docs/ADR-0001-native-mjpeg.md`](docs/ADR-0001-native-mjpeg.md): why there is no embedded browser
+- [`docs/MATRIX_INTEGRATION.md`](docs/MATRIX_INTEGRATION.md): integration strategy
 
 ## Why this exists
 
-Phone apps are useful away from a desk, but makers often want a small desktop window beside
-their slicer, terminal, or browser. PrintWatch was created to monitor an FDM printer and a
-resin printer without repeatedly reaching for a phone or opening separate browser tabs.
+Phone apps are fine away from your desk, but at your desk you want a small window next to your
+slicer. PrintWatch started as a way to watch an FDM printer and a resin printer at the same
+time without reaching for a phone or juggling browser tabs.
+
+## License
+
+[MIT](LICENSE) © Anton Flor. Built with [Qt for Python (PySide6)](https://doc.qt.io/qtforpython-6/),
+used under the LGPLv3; packaged builds ship Qt as separate, replaceable libraries.
+
+PrintWatch Desktop is an independent project. It is not affiliated with, endorsed by, or
+supported by ELEGOO. ELEGOO and Matrix are trademarks of their respective owners. PrintWatch is a
+monitoring convenience, not a printer safety system: never leave a printer running unattended
+on the strength of a camera feed alone.

@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from contextlib import suppress
 
-from PyQt6.QtCore import QElapsedTimer, QObject, QTimer, QUrl, pyqtSignal
-from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
+from PySide6.QtCore import QElapsedTimer, QObject, QTimer, QUrl, Signal
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 
-from printwatch.mjpeg import MjpegFrameParser
+from printwatch.mjpeg import USER_AGENT, MjpegFrameParser
 
 
 class CameraProbe(QObject):
     """Test a camera URL by waiting for one valid JPEG frame."""
 
-    completed = pyqtSignal(bool, str)
+    completed = Signal(bool, str)
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -37,7 +37,7 @@ class CameraProbe(QObject):
             b"Accept",
             b"multipart/x-mixed-replace,image/jpeg,*/*;q=0.5",
         )
-        request.setRawHeader(b"User-Agent", b"PrintWatch-Desktop/0.2")
+        request.setRawHeader(b"User-Agent", USER_AGENT)
         request.setAttribute(
             QNetworkRequest.Attribute.CacheLoadControlAttribute,
             QNetworkRequest.CacheLoadControl.AlwaysNetwork,

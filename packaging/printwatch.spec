@@ -15,12 +15,12 @@ a = Analysis(
     [str(entrypoint)],
     pathex=[str(src_root)],
     binaries=[],
-    datas=[],
-    hiddenimports=["PyQt6.QtNetwork"],
+    datas=[(str(src_root / "printwatch" / "assets"), "printwatch/assets")],
+    hiddenimports=["PySide6.QtNetwork", "PySide6.QtSvg"],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["PyQt6.QtWebEngineCore", "PyQt6.QtWebEngineWidgets"],
+    excludes=["PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets", "PyQt6"],
     noarchive=False,
     optimize=1,
 )
@@ -41,6 +41,7 @@ exe = EXE(
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
+    icon=str(project_root / "packaging" / "icons" / "printwatch.ico"),
     entitlements_file=None,
 )
 
@@ -58,7 +59,7 @@ if sys.platform == "darwin":
     app = BUNDLE(
         coll,
         name="PrintWatch Desktop.app",
-        icon=None,
+        icon=str(project_root / "packaging" / "icons" / "printwatch.icns"),
         bundle_identifier="xyz.montylabs.printwatch",
         version=__version__,
         info_plist={

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from printwatch import __version__
+
+USER_AGENT = f"PrintWatch-Desktop/{__version__}".encode()
+
 
 class MjpegFrameParser:
     """Extract JPEG frames from an MJPEG byte stream without parsing vendor headers."""
